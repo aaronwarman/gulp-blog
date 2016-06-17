@@ -1,0 +1,10 @@
+{% extends 'page.nunjucks' %}
+
+{% block menu %}
+<li><a href="/">HOME</a></li>
+{% endblock %}
+
+{% block content %}
+<h3>Recent Posts</h3>
+...
+{% endblock %}
