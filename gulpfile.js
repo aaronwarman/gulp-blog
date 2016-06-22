@@ -1,5 +1,5 @@
 (function() {
-
+  var path    = require('path');
   var gulp    = require('gulp');
   var plugins = require('gulp-load-plugins')();
   var del     = require('del');
@@ -9,20 +9,26 @@
   
   var site    = {title: 'Aarons Blog'};
 
-  var postExtractor = function(){
+  var postProcessor = function(){
     var posts = [];
-    var extractPost = function(file, enc, cb){
-    var post = {
-        body : file.contents.toString()
+    var processPost = function(file, enc, cb){
+      console.log(file.path);
+      var post = {
+        body : file.contents.toString(),
+        frontMatter: file.data.frontMatter
       };
-        posts.push(post);
-        cb(null, file);
-  };
-  var savePosts = function(cb){
+      posts.push(post);
+      var pathObj = path.parse(file.path);
+      pathObj.base = file.data.frontMatter.permalink + '.html';
+      file.path = path.format(pathObj);
+      console.log(file.path);
+      cb(null, file);
+    };
+    var savePosts = function(cb){
       site.posts = posts; 
       cb();
     };
-    return through.obj(extractPost, savePosts);
+    return through.obj(processPost, savePosts);
   };
 
   gulp.task('sass', function() {
@@ -36,8 +42,11 @@
 
   gulp.task('posts', function(){
     return gulp.src('src/posts/**/*.md')
+               .pipe(plugins.frontMatter({
+                  property: 'data.frontMatter',
+                  remove: true}))
                .pipe(plugins.marked())
-               .pipe(postExtractor())
+               .pipe(postProcessor())
                .pipe(gulp.dest('dist/posts'))
                .pipe(reload({stream: true}));
   });
