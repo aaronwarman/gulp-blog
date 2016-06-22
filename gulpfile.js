@@ -5,6 +5,25 @@
   var del     = require('del');
   var bsync   = require('browser-sync');
   var reload  = bsync.reload;
+  var through = require('through2');
+  
+  var site    = {title: 'Aarons Blog'};
+
+  var postExtractor = function(){
+    var posts = [];
+    var extractPost = function(file, enc, cb){
+    var post = {
+        body : file.contents.toString()
+      };
+        posts.push(post);
+        cb(null, file);
+  };
+  var savePosts = function(cb){
+      site.posts = posts; 
+      cb();
+    };
+    return through.obj(extractPost, savePosts);
+  };
 
   gulp.task('sass', function() {
     return gulp.src('src/sass/**/*.sass')
@@ -18,12 +37,14 @@
   gulp.task('posts', function(){
     return gulp.src('src/posts/**/*.md')
                .pipe(plugins.marked())
+               .pipe(postExtractor())
                .pipe(gulp.dest('dist/posts'))
                .pipe(reload({stream: true}));
   });
 
   gulp.task('pages', function(){
     return gulp.src('src/pages/**/*.nunjucks')
+               .pipe(plugins.data({site:site}))
                .pipe(plugins.nunjucksRender({ path: 'src/templates' }))
                .pipe(gulp.dest('dist'))
                .pipe(reload({stream: true}));
