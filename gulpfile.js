@@ -9,13 +9,19 @@
   
   var site    = {title: 'Aarons Blog'};
 
+  var buildPermalink = function(link) {
+    //todo: add root path handling
+    return '/blog/' + link + '.html';
+  };
+
   var postProcessor = function(){
     var posts = [];
     var processPost = function(file, enc, cb){
       console.log(file.path);
       var post = {
         body : file.contents.toString(),
-        frontMatter: file.data.frontMatter
+        frontMatter: file.data.frontMatter,
+        permalink: buildPermalink(file.data.frontMatter.permalink)
       };
       posts.push(post);
       var pathObj = path.parse(file.path);
@@ -47,14 +53,14 @@
                   remove: true}))
                .pipe(plugins.marked())
                .pipe(postProcessor())
-               .pipe(gulp.dest('dist/posts'))
+               .pipe(gulp.dest('dist/blog'))
                .pipe(reload({stream: true}));
   });
 
   gulp.task('pages', function(){
-    return gulp.src('src/pages/**/*.nunjucks')
+    return gulp.src('src/pages/**/*.pug')
                .pipe(plugins.data({site:site}))
-               .pipe(plugins.nunjucksRender({ path: 'src/templates' }))
+               .pipe(plugins.pug())
                .pipe(gulp.dest('dist'))
                .pipe(reload({stream: true}));
   });

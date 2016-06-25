@@ -1,0 +1,14 @@
+extends ../templates/layout.pug
+
+block menu
+  li
+    a(href="/") Home
+
+block content
+  h2 Recent Posts
+  each post in site.posts
+    .blogpost
+      a(
+        href= post.permalink,
+        class="post-title") #{post.frontMatter.title}
+      | !{post.body}
