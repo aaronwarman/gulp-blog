@@ -1,9 +1,5 @@
 extends ../templates/layout.pug
 
-block menu
-  li
-    a(href="/") Home
-
 block content
   h2 Recent Posts
   each post in site.posts
@@ -11,4 +7,6 @@ block content
       a(
         href= post.permalink,
         class="post-title") #{post.frontMatter.title}
-      | !{post.body}
+      | !{post.summary}
+      if post.summary !== post.body
+        a(href= post.permalink, class="read-more")  Read more...

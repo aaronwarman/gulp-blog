@@ -17,9 +17,9 @@
   var postProcessor = function(){
     var posts = [];
     var processPost = function(file, enc, cb){
-      console.log(file.path);
       var post = {
-        body : file.contents.toString(),
+        body: file.contents.toString(),
+        summary: file.contents.toString().split('<!--fold-->')[0], 
         frontMatter: file.data.frontMatter,
         permalink: buildPermalink(file.data.frontMatter.permalink)
       };
@@ -53,6 +53,8 @@
                   remove: true}))
                .pipe(plugins.marked())
                .pipe(postProcessor())
+               .pipe(plugins.data({site:site}))
+               .pipe(plugins.assignToPug('src/templates/blogpost.pug'))
                .pipe(gulp.dest('dist/blog'))
                .pipe(reload({stream: true}));
   });
