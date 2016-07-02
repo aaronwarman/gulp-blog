@@ -6,8 +6,13 @@
   var bsync   = require('browser-sync');
   var reload  = bsync.reload;
   var through = require('through2');
-  
-  var site    = {title: 'Aarons Blog'};
+  var templateHelpers = require(path.join(__dirname,'templateHelpers.js'));
+
+  var site    = {
+    title: 'Aarons Blog',
+    siteRoot: '/'
+  };
+
 
   var buildPermalink = function(link) {
     //todo: add root path handling
@@ -38,7 +43,7 @@
   };
 
   gulp.task('sass', function() {
-    return gulp.src('src/sass/**/*.sass')
+    return gulp.src('src/sass/**/*.scss')
                .pipe(plugins.sass({
                  outputStyle: 'compressed', errLogToConsole: true
                }))
@@ -54,6 +59,7 @@
                .pipe(plugins.marked())
                .pipe(postProcessor())
                .pipe(plugins.data({site:site}))
+               .pipe(plugins.data({helpers:templateHelpers(site)}))
                .pipe(plugins.assignToPug('src/templates/blogpost.pug'))
                .pipe(gulp.dest('dist/blog'))
                .pipe(reload({stream: true}));
@@ -62,6 +68,7 @@
   gulp.task('pages', function(){
     return gulp.src('src/pages/**/*.pug')
                .pipe(plugins.data({site:site}))
+               .pipe(plugins.data({helpers:templateHelpers(site)}))
                .pipe(plugins.pug())
                .pipe(gulp.dest('dist'))
                .pipe(reload({stream: true}));
@@ -76,10 +83,10 @@
   });
 
   gulp.task('watch', function(cb) {
-    gulp.watch( [ 'src/templates/**/*.nunjucks'], [ 'content']);
+    gulp.watch( [ 'src/templates/**/*.pug'], [ 'content']);
     gulp.watch( [ 'src/posts/**/*.md'],           [ 'content']);
-    gulp.watch( [ 'src/pages/**/*.nunjucks'],     [ 'content']);
-    gulp.watch( [ 'src/sass/**/*.sass'],          [ 'assets']);
+    gulp.watch( [ 'src/pages/**/*.pug'],     [ 'content']);
+    gulp.watch( [ 'src/sass/**/*.scss'],          [ 'assets']);
     cb();
   });
 
@@ -91,6 +98,12 @@
   gulp.task('sync', function(){
     return bsync({server:{baseDir:'dist'}});
   });
+
+  gulp.task('envProd', function() {
+    site.siteRoot = '/blog/';
+  });
+  
+  gulp.task('deploy', plugins.sequence('envProd', 'default')); 
 
   gulp.task('default', plugins.sequence('clean', 'assets', 'content', 'sync', 'watch'));
 

@@ -1,0 +1,42 @@
+//fontography
+@mixin header-font { 
+  font-family: 'Playfair Display SC', serif;
+}
+
+body {
+  background: url(http://www.unoosa.org/res/timeline/index_html/space-2.jpg);
+  background-size: cover;
+}
+
+.body.container {
+  padding-top: 80px;
+  background-color: white;
+  width: 900px;
+}
+
+.body.container h2 {
+  font-family: 'Abril Fatface', serif;
+  font-size: 40px;
+}
+
+.body.container p {
+  font-size: 16px;
+  font-family: 'Inconsolata', ;
+}
+
+nav.navbar {
+  background-color: #000;
+  @include header-font;
+  font-size: 15px;
+}
+
+.navbar-brand {
+  font-size: 20px;
+}
+
+body.special{
+  background-image: url('http://www.zingerbug.com/Backgrounds/background_images/pink_celtic_unicorns_on_white.gif');
+  background-repeat: repeat;
+}
+
+
