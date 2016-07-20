@@ -1,7 +1,4 @@
 ---
-date: 2016-06-20
-title: A couple weeks in... 
-permalink: a-couple-weeks-in
 tags: [intro, devschool, gulp]
 pageClass: special
 ---

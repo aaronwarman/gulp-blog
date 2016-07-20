@@ -1,11 +1,10 @@
 extends ../templates/layout.pug
 block content
-  h2 Recent Posts
   each post in site.posts
     .blogpost
-      a(
-        href= post.permalink,
-        class="post-title") #{post.frontMatter.title}
+      a(href= post.permalink, class="post-title") #{post.title}
+      .meta
+        .date Published on: !{post.publishedOn}
       | !{post.summary}
       if post.summary !== post.body
         a(href= post.permalink, class="read-more")  Read more...

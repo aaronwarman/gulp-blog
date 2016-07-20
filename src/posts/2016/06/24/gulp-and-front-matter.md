@@ -1,7 +1,4 @@
 ---
-date: 2016-06-24
-title: Gulp and Front Matter 
-permalink: gulp-and-front-matter 
 tags: [third post, devschool, gulp]
 ---
 

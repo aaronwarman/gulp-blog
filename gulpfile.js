@@ -1,45 +1,59 @@
 (function() {
-  var path    = require('path');
-  var gulp    = require('gulp');
-  var plugins = require('gulp-load-plugins')();
-  var del     = require('del');
-  var bsync   = require('browser-sync');
-  var reload  = bsync.reload;
-  var through = require('through2');
+  var path            = require('path');
+  var gulp            = require('gulp');
+  var plugins         = require('gulp-load-plugins')();
+  var del             = require('del');
+  var bsync           = require('browser-sync');
+  var reload          = bsync.reload;
+  var through         = require('through2');
   var templateHelpers = require(path.join(__dirname,'templateHelpers.js'));
+  var extractMeta     = require('./lib/extract-meta');
 
-  var site    = {
+  var site = {
     title: 'Aarons Blog',
     siteRoot: '/'
   };
 
+  var summarize = function(contents, marker) {
+    if (contents.indexOf(marker) !== -1) {
+      var summary = contents.split(marker)[0];
+      if (summary) {
+        return summary;
+      }
+    }
 
-  var buildPermalink = function(link) {
-    //todo: add root path handling
-    return '/blog/' + link + '.html';
+    return contents;
   };
 
-  var postProcessor = function(){
+  var permalink = function(path) {
+    return '/blog/' + path.split("/posts")[1];
+  };
+
+
+  var collectPosts = function() {
     var posts = [];
-    var processPost = function(file, enc, cb){
-      var post = {
-        body: file.contents.toString(),
-        summary: file.contents.toString().split('<!--fold-->')[0], 
-        frontMatter: file.data.frontMatter,
-        permalink: buildPermalink(file.data.frontMatter.permalink)
-      };
+
+    return through.obj(function(file, enc, next) {
+      var meta = extractMeta()(file.relative);
+      var body = file.contents.toString();
+      var post          = file.page;
+      post.title        = meta.title;
+      post.publishedOn  = meta.date;
+      post.body         = body;
+      post.summary      = summarize(body, '<!--more-->');
+      post.permalink    = permalink(file.path);
+
       posts.push(post);
-      var pathObj = path.parse(file.path);
-      pathObj.base = file.data.frontMatter.permalink + '.html';
-      file.path = path.format(pathObj);
-      console.log(file.path);
-      cb(null, file);
-    };
-    var savePosts = function(cb){
-      site.posts = posts; 
-      cb();
-    };
-    return through.obj(processPost, savePosts);
+      this.push(file);
+      next();
+    }, function(done) {
+      posts.sort(function(a, b) {
+        return Date.parse(b.publishedOn) - Date.parse(a.publishedOn);
+      });
+
+      site.posts = posts;
+      done();
+    });
   };
 
   gulp.task('sass', function() {
@@ -54,13 +68,15 @@
   gulp.task('posts', function(){
     return gulp.src('src/posts/**/*.md')
                .pipe(plugins.frontMatter({
-                  property: 'data.frontMatter',
+                  property: 'page',
                   remove: true}))
                .pipe(plugins.marked())
-               .pipe(postProcessor())
+               .pipe(collectPosts())
                .pipe(plugins.data({site:site}))
                .pipe(plugins.data({helpers:templateHelpers(site)}))
-               .pipe(plugins.assignToPug('src/templates/blogpost.pug'))
+               .pipe(plugins.assignToPug('src/templates/post.pug', {
+                 basedir: 'src/templates'
+               }))
                .pipe(gulp.dest('dist/blog'))
                .pipe(reload({stream: true}));
   });
@@ -83,10 +99,10 @@
   });
 
   gulp.task('watch', function(cb) {
-    gulp.watch( [ 'src/templates/**/*.pug'], [ 'content']);
-    gulp.watch( [ 'src/posts/**/*.md'],           [ 'content']);
-    gulp.watch( [ 'src/pages/**/*.pug'],     [ 'content']);
-    gulp.watch( [ 'src/sass/**/*.scss'],          [ 'assets']);
+    gulp.watch( [ 'src/templates/**/*.pug' ] , [ 'content' ] );
+    gulp.watch( [ 'src/posts/**/*.md'      ] , [ 'content' ] );
+    gulp.watch( [ 'src/pages/**/*.pug'     ] , [ 'content' ] );
+    gulp.watch( [ 'src/sass/**/*.scss'     ] , [ 'assets'  ] );
     cb();
   });
 
@@ -102,8 +118,8 @@
   gulp.task('envProd', function() {
     site.siteRoot = '/blog/';
   });
-  
-  gulp.task('deploy', plugins.sequence('envProd', 'default')); 
+
+  gulp.task('deploy', plugins.sequence('envProd', 'default'));
 
   gulp.task('default', plugins.sequence('clean', 'assets', 'content', 'sync', 'watch'));
 
