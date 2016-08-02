@@ -4,7 +4,7 @@ block content
     .blogpost
       a(href= post.permalink, class="post-title") #{post.title}
       .meta
-        .date Published on: !{post.publishedOn}
+        .date Published on: !{post.prettyDate}
       | !{post.summary}
       if post.summary !== post.body
         a(href= post.permalink, class="read-more")  Read more...

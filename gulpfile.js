@@ -6,7 +6,6 @@
   var bsync           = require('browser-sync');
   var reload          = bsync.reload;
   var through         = require('through2');
-  var templateHelpers = require(path.join(__dirname,'templateHelpers.js'));
   var extractMeta     = require('./lib/extract-meta');
 
   var site = {
@@ -29,16 +28,25 @@
     return '/blog/' + path.split("/posts")[1];
   };
 
+  var prettyDate = function(date) {
+    if (typeof(date) === Date) {
+      return date.toDateString();
+    }
+    var d = Date.parse(date);
+    return new Date(d).toDateString();
+  };
 
   var collectPosts = function() {
     var posts = [];
 
     return through.obj(function(file, enc, next) {
+      console.log(file);
       var meta = extractMeta()(file.relative);
       var body = file.contents.toString();
       var post          = file.page;
       post.title        = meta.title;
       post.publishedOn  = meta.date;
+      post.prettyDate   = prettyDate(meta.date);
       post.body         = body;
       post.summary      = summarize(body, '<!--more-->');
       post.permalink    = permalink(file.path);
@@ -73,7 +81,6 @@
                .pipe(plugins.marked())
                .pipe(collectPosts())
                .pipe(plugins.data({site:site}))
-               .pipe(plugins.data({helpers:templateHelpers(site)}))
                .pipe(plugins.assignToPug('src/templates/post.pug', {
                  basedir: 'src/templates'
                }))
@@ -84,7 +91,6 @@
   gulp.task('pages', function(){
     return gulp.src('src/pages/**/*.pug')
                .pipe(plugins.data({site:site}))
-               .pipe(plugins.data({helpers:templateHelpers(site)}))
                .pipe(plugins.pug())
                .pipe(gulp.dest('dist'))
                .pipe(reload({stream: true}));
@@ -115,11 +121,10 @@
     return bsync({server:{baseDir:'dist'}});
   });
 
-  gulp.task('envProd', function() {
-    site.siteRoot = '/blog/';
+  gulp.task('deploy', function() {
+    return gulp.src('dist/**/*')
+      .pipe(plugins.ghPages({}));
   });
-
-  gulp.task('deploy', plugins.sequence('envProd', 'default'));
 
   gulp.task('default', plugins.sequence('clean', 'assets', 'content', 'sync', 'watch'));
 
